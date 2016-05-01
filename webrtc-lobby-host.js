@@ -25,7 +25,7 @@ var WebRTCLobbyHost = (function (_super) {
                 reject('invalid credentials');
             }
             if (typeof _this.offer === 'function') {
-                _this.offer(resolve);
+                _this.offer(req, resolve);
                 return;
             }
             reject('no offer handler available');
