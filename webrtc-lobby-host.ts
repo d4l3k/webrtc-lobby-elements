@@ -26,7 +26,7 @@ class WebRTCLobbyHost extends WebRTCLobbyClient {
   @property({type: Number, value: 0}) capacity: number;
   @property({type: Boolean, value: false}) hidden: boolean;
   @property({type: Object, value: {}}) location: any;
-  @property({type: Function}) offer: ()=>void;
+  @property({type: Function}) offer: (resolve: any)=>void;
 
   attached() {
     this.register('client.connect', (req: ConnectLobbyRequest, resolve: (resp: any)=>void, reject: (error: any)=>void) => {
@@ -34,7 +34,8 @@ class WebRTCLobbyHost extends WebRTCLobbyClient {
         reject('invalid credentials');
       }
       if (typeof this.offer === 'function') {
-        resolve(this.offer());
+        this.offer(resolve);
+        return;
       }
       reject('no offer handler available');
     });
