@@ -18,16 +18,24 @@ var WebRTCLobbyList = (function (_super) {
         // The address of the lobby server.
         this.lobbies = [];
     }
-    WebRTCLobbyList.prototype.open = function () {
+    WebRTCLobbyList.prototype.refresh = function () {
         var _this = this;
-        console.log('open!');
+        if (!this.open) {
+            return;
+        }
         this.send('lobby.list', { Service: this.service }).then(function (resp) {
             _this.lobbies = resp.Lobbies || [];
         });
     };
+    WebRTCLobbyList.prototype.connect = function (id, offer, password) {
+        return this.send('lobby.connect', { Id: id, Offer: offer, Password: password });
+    };
     __decorate([
         property({ type: Array, notify: true })
     ], WebRTCLobbyList.prototype, "lobbies", void 0);
+    __decorate([
+        observe('service,open,location')
+    ], WebRTCLobbyList.prototype, "refresh", null);
     WebRTCLobbyList = __decorate([
         component("webrtc-lobby-list")
     ], WebRTCLobbyList);

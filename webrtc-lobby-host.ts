@@ -8,29 +8,50 @@ interface CreateLobbyResponse {
   Lobbies: Lobby[];
 }
 
+interface ConnectLobbyRequest {
+  ID: string;
+  Offer: string;
+  Password: string;
+}
+
 @component("webrtc-lobby-host")
 class WebRTCLobbyHost extends WebRTCLobbyClient {
   // The address of the lobby server.
 
   @property({type: String, notify: true}) token: string = this.generateToken();
   @property({type: String}) name: string;
-  @property({type: String}) creator: string;
-  @property({type: String}) password: string;
-  @property({type: Number}) people: number;
-  @property({type: Number}) capacity: number;
-  @property({type: Boolean}) hidden: boolean;
-  @property({type: Object}) location: any;
+  @property({type: String, value: ''}) creator: string;
+  @property({type: String, value: ''}) password: string;
+  @property({type: Number, value: 0}) people: number;
+  @property({type: Number, value: 0}) capacity: number;
+  @property({type: Boolean, value: false}) hidden: boolean;
+  @property({type: Object, value: {}}) location: any;
+  @property({type: Function}) offer: ()=>void;
 
-  open() {
-    console.log('open!');
+  attached() {
+    this.register('client.connect', (req: ConnectLobbyRequest, resolve: (resp: any)=>void, reject: (error: any)=>void) => {
+      if (this.password.length > 0 && this.password != req.Password) {
+        reject('invalid credentials');
+      }
+      if (typeof this.offer === 'function') {
+        resolve(this.offer());
+      }
+      reject('no offer handler available');
+    });
+  }
 
+  @observe('open,service,token,name,creator,hidden,password,people,capacity,location')
+  refresh() {
+    if (!this.open) {
+      return;
+    }
     this.send('lobby.new', {
       Service: this.service,
       ID: this.token,
       Name: this.name,
       Creator: this.creator,
       Hidden: this.hidden,
-      RequiresPassword: !!this.password,
+      RequiresPassword: this.password.length > 0,
       People: this.people,
       Capacity: this.capacity,
       Location: this.location

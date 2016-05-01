@@ -2,13 +2,13 @@
 ///<reference path="./webrtc-lobby-client.ts" />
 
 interface Lobby {
-	ID: string;
+  ID: string;
   Name: string;
   Creator: string;
-	Hidden: boolean;
+  Hidden: boolean;
   RequiresPassword: boolean;
-	Distance: number;
-	People: number;
+  Distance: number;
+  People: number;
   Capacity: number;
 }
 
@@ -22,13 +22,19 @@ class WebRTCLobbyList extends WebRTCLobbyClient {
 
   @property({type: Array, notify: true}) lobbies: Lobby[] = [];
 
-  open() {
-    console.log('open!');
+  @observe('service,open,location')
+  refresh() {
+    if (!this.open) {
+      return;
+    }
     this.send('lobby.list', {Service: this.service}).then((resp: ListLobbyResponse)=>{
       this.lobbies = resp.Lobbies || [];
     });
   }
 
+  connect(id: string, offer: string, password: string) {
+    return this.send('lobby.connect', {Id: id, Offer: offer, Password: password});
+  }
 }
 
 // after the element is defined, we register it in Polymer

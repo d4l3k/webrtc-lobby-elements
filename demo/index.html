@@ -15,12 +15,15 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
     <title>webrtc-lobby-list Demo</title>
     <script src="../../webcomponentsjs/webcomponents-lite.js"></script>
     <link rel="import" href="../webrtc-lobby-elements.html">
+    <link rel="import" href="../../paper-input/paper-input.html">
   </head>
   <body>
 
-    <template is="dom-bind">
-      <webrtc-lobby-host url="ws://localhost:5000/ws" name="Awesome Lobby" creator="Me" service="test"></webrtc-lobby-host>
-      <webrtc-lobby-list url="ws://localhost:5000/ws" lobbies="{{lobbies}}" service="test"></webrtc-lobby-list>
+    <template id="app" is="dom-bind">
+      <paper-input label="Name" value="{{name}}"></paper-input>
+      <paper-input label="Creator" value="{{creator}}"></paper-input>
+      <webrtc-lobby-host url="wss://fn.lc/lobby" name="{{name}}" creator="{{creator}}" service="test"></webrtc-lobby-host>
+      <webrtc-lobby-list url="wss://fn.lc/lobby" lobbies="{{lobbies}}" service="test"></webrtc-lobby-list>
       <table>
         <thead>
           <th>ID</th>
@@ -48,6 +51,16 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
     </template>
 
     <script>
+      const app = document.querySelector('#app');
+      app.addEventListener('dom-change', function() {
+        app.name = 'Awesome Lobby ' + (Math.random()*1000).toFixed(0);
+        app.creator = 'Me!';
+
+        const list = document.querySelector('webrtc-lobby-list');
+        setInterval(function() {
+          list.refresh();
+        }, 1000);
+      });
     </script>
 
   </body>

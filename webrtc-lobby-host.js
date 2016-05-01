@@ -18,15 +18,29 @@ var WebRTCLobbyHost = (function (_super) {
         // The address of the lobby server.
         this.token = this.generateToken();
     }
-    WebRTCLobbyHost.prototype.open = function () {
-        console.log('open!');
+    WebRTCLobbyHost.prototype.attached = function () {
+        var _this = this;
+        this.register('client.connect', function (req, resolve, reject) {
+            if (_this.password.length > 0 && _this.password != req.Password) {
+                reject('invalid credentials');
+            }
+            if (typeof _this.offer === 'function') {
+                resolve(_this.offer());
+            }
+            reject('no offer handler available');
+        });
+    };
+    WebRTCLobbyHost.prototype.refresh = function () {
+        if (!this.open) {
+            return;
+        }
         this.send('lobby.new', {
             Service: this.service,
             ID: this.token,
             Name: this.name,
             Creator: this.creator,
             Hidden: this.hidden,
-            RequiresPassword: !!this.password,
+            RequiresPassword: this.password.length > 0,
             People: this.people,
             Capacity: this.capacity,
             Location: this.location
@@ -52,23 +66,29 @@ var WebRTCLobbyHost = (function (_super) {
         property({ type: String })
     ], WebRTCLobbyHost.prototype, "name", void 0);
     __decorate([
-        property({ type: String })
+        property({ type: String, value: '' })
     ], WebRTCLobbyHost.prototype, "creator", void 0);
     __decorate([
-        property({ type: String })
+        property({ type: String, value: '' })
     ], WebRTCLobbyHost.prototype, "password", void 0);
     __decorate([
-        property({ type: Number })
+        property({ type: Number, value: 0 })
     ], WebRTCLobbyHost.prototype, "people", void 0);
     __decorate([
-        property({ type: Number })
+        property({ type: Number, value: 0 })
     ], WebRTCLobbyHost.prototype, "capacity", void 0);
     __decorate([
-        property({ type: Boolean })
+        property({ type: Boolean, value: false })
     ], WebRTCLobbyHost.prototype, "hidden", void 0);
     __decorate([
-        property({ type: Object })
+        property({ type: Object, value: {} })
     ], WebRTCLobbyHost.prototype, "location", void 0);
+    __decorate([
+        property({ type: Function })
+    ], WebRTCLobbyHost.prototype, "offer", void 0);
+    __decorate([
+        observe('open,service,token,name,creator,hidden,password,people,capacity,location')
+    ], WebRTCLobbyHost.prototype, "refresh", null);
     WebRTCLobbyHost = __decorate([
         component("webrtc-lobby-host")
     ], WebRTCLobbyHost);

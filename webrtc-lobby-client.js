@@ -15,12 +15,21 @@ var WebRTCLobbyClient = (function (_super) {
     __extends(WebRTCLobbyClient, _super);
     function WebRTCLobbyClient() {
         _super.apply(this, arguments);
+        this.open = false;
         this.curID = 0;
         this.promises = {};
+        this.handlers = {};
+        this.debug = false;
     }
     WebRTCLobbyClient.prototype.nextID = function () {
         this.curID = (this.curID || 0) + 1;
         return this.curID;
+    };
+    WebRTCLobbyClient.prototype.onOpen = function () {
+        this.open = true;
+    };
+    WebRTCLobbyClient.prototype.created = function () {
+        this.getLocation();
     };
     WebRTCLobbyClient.prototype.send = function (method, params) {
         var _this = this;
@@ -39,11 +48,58 @@ var WebRTCLobbyClient = (function (_super) {
                 reject: reject
             };
         });
-        this.$.socket.send(body);
+        this.sendRaw(body);
         return p;
     };
+    WebRTCLobbyClient.prototype.getLocation = function () {
+        var _this = this;
+        navigator.geolocation.getCurrentPosition(function (position) {
+            _this.location = position.coords;
+        });
+    };
+    WebRTCLobbyClient.prototype.register = function (method, handler) {
+        if (!this.handlers) {
+            this.handlers = {};
+        }
+        this.handlers[method] = handler;
+    };
+    WebRTCLobbyClient.prototype.sendRaw = function (body) {
+        if (this.debug) {
+            console.log('sending', body);
+        }
+        this.$.socket.send(body);
+    };
     WebRTCLobbyClient.prototype.message = function (event, data) {
-        console.log('data!', data.data);
+        var _this = this;
+        if (data.data.method) {
+            if (this.debug) {
+                console.log('rpc', data.data);
+            }
+            var p = new Promise(function (resolve, reject) {
+                var handler = _this.handlers[data.data.method];
+                if (!handler) {
+                    reject('unknown rpc call');
+                    return;
+                }
+                handler(data.data.params[0], resolve, reject);
+            }).then(function (result) {
+                _this.sendRaw({
+                    id: data.data.id,
+                    error: null,
+                    result: result
+                });
+            }).catch(function (error) {
+                _this.sendRaw({
+                    id: data.data.id,
+                    error: error.message || error,
+                    result: null
+                });
+            });
+            return;
+        }
+        if (this.debug) {
+            console.log('response', data.data);
+        }
         var resolver = this.promises[data.data.id];
         delete this.promises[data.data.id];
         if (data.data.error) {
@@ -62,5 +118,11 @@ var WebRTCLobbyClient = (function (_super) {
     __decorate([
         property({ type: String })
     ], WebRTCLobbyClient.prototype, "service", void 0);
+    __decorate([
+        property({ type: Object, value: {} })
+    ], WebRTCLobbyClient.prototype, "location", void 0);
+    __decorate([
+        property({ type: Boolean })
+    ], WebRTCLobbyClient.prototype, "open", void 0);
     return WebRTCLobbyClient;
 }(polymer.Base));
